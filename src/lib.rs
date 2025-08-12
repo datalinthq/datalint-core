@@ -1,23 +1,54 @@
+#![cfg_attr(debug_assertions, allow(dead_code, unused_imports))]
+
 use pyo3::prelude::*;
+use std::path::PathBuf;
 
-mod format;
-mod py;
-mod utils;
+// Internal modules
+mod cache;
+mod errors;
 
-pub use format::{get_dataset_format, validate_format, DatasetFormat};
+use crate::cache::create_cache_db;
+use crate::errors::DatalintResult;
 
-// PyO3 function registration macro
-macro_rules! register_pyfunctions {
-    ($module:ident, [$($func:ident),* $(,)?]) => {
-        $(
-            $module.add_function(wrap_pyfunction!($func, &$module)?)?;
-        )*
-    };
+/// Get the version of datalint-core
+fn get_datalint_core_version() -> &'static str {
+    env!("CARGO_PKG_VERSION")
 }
 
+/// Create a cache database for a dataset at the specified path
+///
+/// Args:
+///     cache_path (str): Path where the cache database will be created
+///
+/// Returns:
+///     str: Success message indicating where the database was created
+///
+/// Raises:
+///     RuntimeError: If cache creation fails
+#[pyfunction]
+#[pyo3(name = "create_cache")]
+fn py_create_cache(cache_path: String) -> PyResult<String> {
+    let path = PathBuf::from(&cache_path);
+
+    // Create the cache database
+    create_cache_db(&path)?;
+
+    // Return success message
+    Ok(format!("Cache created at: {}", cache_path))
+}
+
+/// Main Python module definition
+///
+/// This follows pydantic-core's pattern of having a clean module initialization
+/// with version information and exported functions.
 #[pymodule]
-fn _datalint_core(_py: Python<'_>, m: Bound<'_, PyModule>) -> PyResult<()> {
-    use py::*;
-    register_pyfunctions!(m, [py_get_dataset_format, py_validate_dataset_format,]);
+#[pyo3(name = "_datalint_core")]
+fn datalint_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    // Add version information
+    m.add("__version__", get_datalint_core_version())?;
+
+    // Add functions
+    m.add_function(wrap_pyfunction!(py_create_cache, m)?)?;
+
     Ok(())
 }

@@ -22,6 +22,13 @@ name = "datalint_core"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = "0.24.0"
-anyhow = "1.0"
-serde = { version = "1", features = ["derive"] }
+pyo3 = { version = "0.24.0", features = ["extension-module"] }
+rusqlite = { version = "0.32", features = ["bundled"] }
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+strip = true
+
+[profile.dev]
+opt-level = 1

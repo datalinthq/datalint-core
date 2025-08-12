@@ -18,3 +18,8 @@ target/
 
 # Shared object files
 *.so
+
+# Backup/unused files
+*.unused
+src/py_old/
+*.bak
