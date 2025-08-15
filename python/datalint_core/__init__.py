@@ -8,11 +8,15 @@ implemented in Rust with Python bindings via PyO3.
 from __future__ import annotations
 
 from ._datalint_core import (
+    DatasetTask,
+    DatasetType,
     __version__,
     create_cache,
 )
 
 __all__ = [
+    "DatasetTask",
+    "DatasetType",
     "__version__",
     "create_cache",
 ]

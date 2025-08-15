@@ -5,9 +5,11 @@ use std::path::PathBuf;
 
 // Internal modules
 mod cache;
+mod enums;
 mod errors;
 
 use crate::cache::create_cache_db;
+use crate::enums::{DatasetTask, DatasetType};
 use crate::errors::DatalintResult;
 
 /// Get the version of datalint-core
@@ -49,6 +51,10 @@ fn datalint_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
 
     // Add functions
     m.add_function(wrap_pyfunction!(py_create_cache, m)?)?;
+
+    // Add enum classes
+    m.add_class::<DatasetTask>()?;
+    m.add_class::<DatasetType>()?;
 
     Ok(())
 }
