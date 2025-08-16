@@ -1,8 +1,8 @@
+use crate::enums::{DatasetTask, DatasetType};
+use crate::errors::{DatalintError, DatalintResult};
 use rusqlite::{Connection, Result as SqliteResult};
 use std::fs;
 use std::path::Path;
-
-use crate::errors::{DatalintError, DatalintResult};
 
 /// Creates a cache database with a basic metadata table
 ///
@@ -15,7 +15,11 @@ use crate::errors::{DatalintError, DatalintResult};
 /// # Returns
 /// * `Ok(())` - If the database and table were created successfully
 /// * `Err(DatalintError)` - If database creation fails
-pub fn create_cache_db(cache_path: &Path) -> DatalintResult<()> {
+pub fn create_cache_db(
+    cache_path: &Path,
+    dataset_type: &DatasetType,
+    dataset_task: &DatasetTask,
+) -> DatalintResult<()> {
     // Create parent directories if they don't exist
     if let Some(parent) = cache_path.parent() {
         fs::create_dir_all(parent)?;

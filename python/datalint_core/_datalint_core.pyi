@@ -4,7 +4,9 @@ from typing import ClassVar
 
 __version__: str
 
-def create_cache(cache_path: str) -> str: ...
+def create_cache(
+    cache_path: str, dataset_type: DatasetType, dataset_task: DatasetTask
+) -> str: ...
 
 class DatasetTask:
     """Dataset task types for computer vision."""

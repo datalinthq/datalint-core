@@ -29,11 +29,15 @@ fn get_datalint_core_version() -> &'static str {
 ///     RuntimeError: If cache creation fails
 #[pyfunction]
 #[pyo3(name = "create_cache")]
-fn py_create_cache(cache_path: String) -> PyResult<String> {
+fn py_create_cache(
+    cache_path: String,
+    dataset_type: DatasetType,
+    dataset_task: DatasetTask,
+) -> PyResult<String> {
     let path = PathBuf::from(&cache_path);
 
     // Create the cache database
-    create_cache_db(&path)?;
+    create_cache_db(&path, &dataset_type, &dataset_task)?;
 
     // Return success message
     Ok(format!("Cache created at: {}", cache_path))
