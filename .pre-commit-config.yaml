@@ -12,15 +12,14 @@ repos:
 
   - repo: local
     hooks:
-      - id: typecheck-python
-        name: Typecheck Python
-        entry: make pyright
-        types: [python]
-        language: system
-        pass_filenames: false
       - id: format-rust
         name: Format Rust
         entry: make format
         types: [rust]
         language: system
         pass_filenames: false
+
+  - repo: https://github.com/facebook/pyrefly
+    rev: 0.28.1
+    hooks:
+      - id: pyrefly-typecheck

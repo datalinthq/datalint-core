@@ -21,6 +21,7 @@ features = ["pyo3/extension-module"]
 [dependency-groups]
 dev = [
     "maturin",
+    "pyrefly>=0.28.1",
 ]
 testing = [
     { include-group = "dev" },
