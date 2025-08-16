@@ -1,4 +1,4 @@
-use crate::errors::{DatalintError, DatalintResult};
+use crate::errors::DatalintResult;
 use chrono::Utc;
 use duckdb::Connection;
 use std::path::Path;

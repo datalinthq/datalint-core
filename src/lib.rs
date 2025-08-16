@@ -1,6 +1,5 @@
-#![cfg_attr(debug_assertions, allow(dead_code, unused_imports))]
+#![cfg_attr(debug_assertions, allow(dead_code))]
 
-#[cfg(feature = "python")]
 use pyo3::prelude::*;
 use std::path::PathBuf;
 
@@ -12,11 +11,9 @@ pub mod errors; // Make errors public since db uses it
 
 use crate::cache::create_cache_db;
 use crate::enums::{DatasetTask, DatasetType};
-use crate::errors::DatalintResult;
 
 mod python_bindings {
     use super::*;
-    use pyo3::prelude::*;
 
     /// Get the version of datalint-core
     fn get_datalint_core_version() -> &'static str {
@@ -42,10 +39,8 @@ mod python_bindings {
     ) -> PyResult<String> {
         let path = PathBuf::from(&cache_path);
 
-        // Create the cache database
         create_cache_db(&path, &dataset_type, &dataset_task)?;
 
-        // Return success message
         Ok(format!("Cache created at: {}", cache_path))
     }
 
