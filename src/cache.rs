@@ -1,19 +1,20 @@
+use crate::db::Database;
 use crate::enums::{DatasetTask, DatasetType};
-use crate::errors::{DatalintError, DatalintResult};
-use rusqlite::{Connection, Result as SqliteResult};
+use crate::errors::DatalintResult;
 use std::fs;
 use std::path::Path;
 
-/// Creates a cache database with a basic metadata table
+/// Creates a cache database with full schema
 ///
-/// This creates an SQLite database with a simple table structure
-/// that can be expanded in future iterations.
+/// This creates a DuckDB database with all required tables for dataset caching.
 ///
 /// # Arguments
 /// * `cache_path` - Path where the cache database will be created
+/// * `dataset_type` - Type of the dataset (YOLO, COCO, etc.)
+/// * `dataset_task` - Task type (detect, segment, etc.)
 ///
 /// # Returns
-/// * `Ok(())` - If the database and table were created successfully
+/// * `Ok(())` - If the database and tables were created successfully
 /// * `Err(DatalintError)` - If database creation fails
 pub fn create_cache_db(
     cache_path: &Path,
@@ -25,29 +26,16 @@ pub fn create_cache_db(
         fs::create_dir_all(parent)?;
     }
 
-    // Create or open the SQLite database
-    let conn = Connection::open(cache_path)
-        .map_err(|e| DatalintError::Generic(format!("Failed to create database: {}", e)))?;
+    // Create database with full schema
+    let mut db = Database::open(cache_path)?;
 
-    // Create a simple metadata table
-    // This is a minimal starting point that can be expanded
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS dataset_metadata (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            key TEXT NOT NULL UNIQUE,
-            value TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )",
-        [],
-    )
-    .map_err(|e| DatalintError::Generic(format!("Failed to create table: {}", e)))?;
-
-    // Set some pragmas for better performance
-    conn.execute_batch(
-        "PRAGMA journal_mode = WAL;
-         PRAGMA synchronous = NORMAL;",
-    )
-    .map_err(|e| DatalintError::Generic(format!("Failed to set pragmas: {}", e)))?;
+    // Initialize cache metadata
+    db.init_cache_metadata(
+        cache_path.to_str().unwrap_or("unknown"),
+        dataset_type.as_str(),
+        dataset_task.as_str(),
+        env!("CARGO_PKG_VERSION"),
+    )?;
 
     Ok(())
 }

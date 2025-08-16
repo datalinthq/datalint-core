@@ -66,5 +66,15 @@ clean:
 	rm -rf .pytest_cache
 	rm -rf python/datalint_core/*.so
 
+
+.PHONY: test-rust
+test-rust:
+	@echo "Running Rust tests..."
+	cargo test --lib -- --nocapture
+
+.PHONY: debug
+debug:
+	cargo run --bin debug
+
 .PHONY: all
 all: format build-dev lint test

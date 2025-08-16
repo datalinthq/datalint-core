@@ -23,3 +23,11 @@ target/
 *.unused
 src/py_old/
 *.bak
+
+# Debug files
+src/bin/debug.rs
+
+# Debug/test files
+*.db
+*.duckdb
+*.duckdb.wal
