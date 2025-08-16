@@ -19,32 +19,15 @@ impl ImageQueries {
         FROM images WHERE file_hash = ?
     "#;
 
-    const SELECT_BY_ID: &'static str = r#"
-        SELECT id, filename, relative_path, split, width, height, channels, format, file_size, file_hash
-        FROM images WHERE id = ?
-    "#;
-
-    const SELECT_BY_SPLIT: &'static str = r#"
-        SELECT id, filename, relative_path, split, width, height, channels, format, file_size, file_hash
-        FROM images WHERE split = ?
-    "#;
-
     const COUNT_BY_SPLIT: &'static str = r#"
         SELECT split, COUNT(*) as count
         FROM images
         GROUP BY split
     "#;
 
-    const FIND_DUPLICATES: &'static str = r#"
-        SELECT file_hash, COUNT(*) as count, GROUP_CONCAT(relative_path || '/' || filename) as paths
-        FROM images
-        GROUP BY file_hash
-        HAVING COUNT(*) > 1
-    "#;
-
     /// Insert a new image
     pub fn insert(conn: &Connection, image: &Image) -> DatalintResult<i64> {
-        let id: i64 = conn.query_row(
+        conn.query_row(
             Self::INSERT,
             params![
                 image.filename,
@@ -58,15 +41,13 @@ impl ImageQueries {
                 image.file_hash,
             ],
             |row| row.get(0),
-        )?;
-
-        Ok(id)
+        )
+        .map_err(Into::into)
     }
 
     /// Compute SHA256 hash for a file
     pub fn compute_file_hash(path: &Path) -> DatalintResult<String> {
         let data = fs::read(path)?;
-
         let mut hasher = Sha256::new();
         hasher.update(&data);
         Ok(format!("{:x}", hasher.finalize()))

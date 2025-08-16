@@ -21,7 +21,6 @@ pub enum DatasetTask {
 
 #[pymethods]
 impl DatasetTask {
-    /// Create a new DatasetTask from a string value
     #[new]
     fn new(value: &str) -> PyResult<Self> {
         Self::from_str(value).map_err(|e| pyo3::exceptions::PyValueError::new_err(e))
@@ -123,7 +122,6 @@ pub enum DatasetType {
 
 #[pymethods]
 impl DatasetType {
-    /// Create a new DatasetType from a string value
     #[new]
     fn new(value: &str) -> PyResult<Self> {
         Self::from_str(value).map_err(|e| pyo3::exceptions::PyValueError::new_err(e))

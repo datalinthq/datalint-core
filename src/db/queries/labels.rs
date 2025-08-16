@@ -19,21 +19,12 @@ impl LabelQueries {
         SELECT id, name, color FROM labels WHERE name = ?
     "#;
 
-    const SELECT_BY_ID: &'static str = r#"
-        SELECT id, name, color FROM labels WHERE id = ?
-    "#;
-
-    const UPDATE_COLOR: &'static str = r#"
-        UPDATE labels SET color = ? WHERE id = ?
-    "#;
-
     /// Insert a new label
     pub fn insert(conn: &Connection, label: &Label) -> DatalintResult<i64> {
-        let id: i64 = conn.query_row(Self::INSERT, params![label.name, label.color], |row| {
+        conn.query_row(Self::INSERT, params![label.name, label.color], |row| {
             row.get(0)
-        })?;
-
-        Ok(id)
+        })
+        .map_err(Into::into)
     }
 
     /// Get all labels

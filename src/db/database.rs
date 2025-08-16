@@ -16,7 +16,6 @@ impl Database {
     /// Create a new in-memory database
     pub fn new_memory() -> DatalintResult<Self> {
         let conn = Connection::open_in_memory()?;
-
         let mut db = Self { conn };
         db.init_schema()?;
         Ok(db)
@@ -25,10 +24,9 @@ impl Database {
     /// Open or create a database file
     pub fn open(path: &Path) -> DatalintResult<Self> {
         let conn = Connection::open(path)?;
-
         let mut db = Self { conn };
 
-        // Check if tables exist, if not initialize schema
+        // Initialize schema if tables don't exist
         if !db.tables_exist()? {
             db.init_schema()?;
         }
@@ -134,7 +132,7 @@ impl Database {
     }
 
     /// Begin a transaction
-    pub fn transaction(&mut self) -> DatalintResult<duckdb::Transaction> {
+    pub fn transaction(&mut self) -> DatalintResult<duckdb::Transaction<'_>> {
         Ok(self.conn.transaction()?)
     }
 
@@ -169,21 +167,18 @@ impl Database {
     }
 
     /// Delete an image and cascade to related records
-    /// (Manual cascade since DuckDB doesn't support ON DELETE CASCADE)
     pub fn delete_image(&mut self, image_id: i32) -> DatalintResult<()> {
         let tx = self.transaction()?;
 
-        // Delete related bboxes and their children first
+        // Delete in cascade order (children first)
         tx.execute(
             "DELETE FROM keypoints WHERE bbox_id IN (SELECT id FROM bboxes WHERE image_id = ?)",
             duckdb::params![image_id],
         )?;
-
         tx.execute(
             "DELETE FROM segmentations WHERE bbox_id IN (SELECT id FROM bboxes WHERE image_id = ?)",
             duckdb::params![image_id],
         )?;
-
         tx.execute(
             "DELETE FROM bboxes WHERE image_id = ?",
             duckdb::params![image_id],

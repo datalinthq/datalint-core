@@ -5,62 +5,50 @@ use std::path::PathBuf;
 
 // Internal modules
 mod cache;
-pub mod db; // Make db public for debug binary
+pub mod db;
 mod enums;
-pub mod errors; // Make errors public since db uses it
+pub mod errors;
 
 use crate::cache::create_cache_db;
 use crate::enums::{DatasetTask, DatasetType};
 
-mod python_bindings {
-    use super::*;
+/// Create a cache database for a dataset
+///
+/// Args:
+///     cache_path (str): Path where the cache database will be created
+///     dataset_type (DatasetType): Type of dataset (YOLO, COCO, etc.)
+///     dataset_task (DatasetTask): Task type (detect, segment, etc.)
+///
+/// Returns:
+///     str: Success message with the cache location
+///
+/// Raises:
+///     RuntimeError: If cache creation fails
+#[pyfunction]
+#[pyo3(name = "create_cache")]
+fn py_create_cache(
+    cache_path: String,
+    dataset_type: DatasetType,
+    dataset_task: DatasetTask,
+) -> PyResult<String> {
+    let path = PathBuf::from(&cache_path);
+    create_cache_db(&path, &dataset_type, &dataset_task)?;
+    Ok(format!("Cache created at: {}", cache_path))
+}
 
-    /// Get the version of datalint-core
-    fn get_datalint_core_version() -> &'static str {
-        env!("CARGO_PKG_VERSION")
-    }
+/// Datalint Core Python module
+#[pymodule]
+#[pyo3(name = "_datalint_core")]
+fn datalint_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    // Add version information
+    m.add("__version__", env!("CARGO_PKG_VERSION"))?;
 
-    /// Create a cache database for a dataset at the specified path
-    ///
-    /// Args:
-    ///     cache_path (str): Path where the cache database will be created
-    ///
-    /// Returns:
-    ///     str: Success message indicating where the database was created
-    ///
-    /// Raises:
-    ///     RuntimeError: If cache creation fails
-    #[pyfunction]
-    #[pyo3(name = "create_cache")]
-    fn py_create_cache(
-        cache_path: String,
-        dataset_type: DatasetType,
-        dataset_task: DatasetTask,
-    ) -> PyResult<String> {
-        let path = PathBuf::from(&cache_path);
+    // Add functions
+    m.add_function(wrap_pyfunction!(py_create_cache, m)?)?;
 
-        create_cache_db(&path, &dataset_type, &dataset_task)?;
+    // Add enum classes
+    m.add_class::<DatasetTask>()?;
+    m.add_class::<DatasetType>()?;
 
-        Ok(format!("Cache created at: {}", cache_path))
-    }
-
-    /// Main Python module definition
-    ///
-    /// This follows pydantic-core's pattern of having a clean module initialization
-    /// with version information and exported functions.
-    #[pymodule]
-    #[pyo3(name = "_datalint_core")]
-    fn datalint_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
-        // Add version information
-        m.add("__version__", get_datalint_core_version())?;
-
-        // Add functions
-        m.add_function(wrap_pyfunction!(py_create_cache, m)?)?;
-
-        // Add enum classes
-        m.add_class::<DatasetTask>()?;
-        m.add_class::<DatasetType>()?;
-
-        Ok(())
-    }
+    Ok(())
 }

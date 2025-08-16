@@ -17,25 +17,10 @@ impl BboxQueries {
         FROM bboxes WHERE image_id = ?
     "#;
 
-    const SELECT_BY_LABEL: &'static str = r#"
-        SELECT id, image_id, label_id, x1, y1, x2, y2, cx, cy, w, h, area, angle, confidence
-        FROM bboxes WHERE label_id = ?
-    "#;
-
     const COUNT_BY_LABEL: &'static str = r#"
         SELECT label_id, COUNT(*) as count
         FROM bboxes
         GROUP BY label_id
-    "#;
-
-    const FIND_OVERLAPPING: &'static str = r#"
-        SELECT b1.id, b2.id,
-               b1.x1, b1.y1, b1.x2, b1.y2,
-               b2.x1, b2.y1, b2.x2, b2.y2
-        FROM bboxes b1
-        JOIN bboxes b2 ON b1.image_id = b2.image_id AND b1.id < b2.id
-        WHERE b1.x1 < b2.x2 AND b1.x2 > b2.x1
-          AND b1.y1 < b2.y2 AND b1.y2 > b2.y1
     "#;
 
     const INSERT_SEGMENTATION: &'static str = r#"
@@ -52,10 +37,9 @@ impl BboxQueries {
 
     /// Insert a bounding box (computes derived values)
     pub fn insert(conn: &Connection, bbox: &mut Bbox) -> DatalintResult<i64> {
-        // Compute derived values
         bbox.compute_derived();
 
-        let id: i64 = conn.query_row(
+        conn.query_row(
             Self::INSERT,
             params![
                 bbox.image_id,
@@ -73,9 +57,8 @@ impl BboxQueries {
                 bbox.confidence,
             ],
             |row| row.get(0),
-        )?;
-
-        Ok(id)
+        )
+        .map_err(Into::into)
     }
 
     /// Insert segmentation for a bbox
@@ -83,13 +66,12 @@ impl BboxQueries {
         let vertices_json = serde_json::to_string(&seg.vertices)
             .map_err(|e| crate::errors::DatalintError::Generic(e.to_string()))?;
 
-        let id: i64 = conn.query_row(
+        conn.query_row(
             Self::INSERT_SEGMENTATION,
-            params![seg.bbox_id, vertices_json, seg.vertex_count,],
+            params![seg.bbox_id, vertices_json, seg.vertex_count],
             |row| row.get(0),
-        )?;
-
-        Ok(id)
+        )
+        .map_err(Into::into)
     }
 
     /// Insert keypoints for a bbox
@@ -97,18 +79,17 @@ impl BboxQueries {
         let points_json = serde_json::to_string(&kp.points)
             .map_err(|e| crate::errors::DatalintError::Generic(e.to_string()))?;
 
-        let id: i64 = conn.query_row(
+        conn.query_row(
             Self::INSERT_KEYPOINT,
             params![
                 kp.bbox_id,
                 points_json,
                 kp.point_count,
-                kp.has_visibility as i32,
+                kp.has_visibility as i32
             ],
             |row| row.get(0),
-        )?;
-
-        Ok(id)
+        )
+        .map_err(Into::into)
     }
 
     /// Get bboxes for an image
