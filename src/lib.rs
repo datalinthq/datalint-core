@@ -14,7 +14,6 @@ use crate::cache::create_cache_db;
 use crate::enums::{DatasetTask, DatasetType};
 use crate::errors::DatalintResult;
 
-#[cfg(feature = "python")]
 mod python_bindings {
     use super::*;
     use pyo3::prelude::*;

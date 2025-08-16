@@ -21,6 +21,10 @@ rust-version = "1.75"
 name = "datalint_core"
 crate-type = ["cdylib", "rlib"]
 
+[[bin]]
+name = "debug"
+path = "src/bin/debug.rs"
+
 [dependencies]
 pyo3 = { version = "0.25" }
 duckdb = { version = "1.3", features = ["bundled"] }

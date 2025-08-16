@@ -34,7 +34,7 @@ CREATE TABLE images (
 
 CREATE TABLE bboxes (
     id INTEGER PRIMARY KEY,
-    image_id INTEGER NOT NULL REFERENCES images(id) ON DELETE CASCADE,
+    image_id INTEGER NOT NULL REFERENCES images(id),
     label_id INTEGER NOT NULL REFERENCES labels(id),
     -- Store corners
     x1 REAL NOT NULL,
@@ -54,14 +54,14 @@ CREATE TABLE bboxes (
 
 CREATE TABLE segmentations (
     id INTEGER PRIMARY KEY,
-    bbox_id INTEGER NOT NULL REFERENCES bboxes(id) ON DELETE CASCADE,
+    bbox_id INTEGER NOT NULL REFERENCES bboxes(id),
     vertices TEXT NOT NULL,
     vertex_count INTEGER NOT NULL
 );
 
 CREATE TABLE keypoints (
     id INTEGER PRIMARY KEY,
-    bbox_id INTEGER NOT NULL REFERENCES bboxes(id) ON DELETE CASCADE,
+    bbox_id INTEGER NOT NULL REFERENCES bboxes(id),
     points TEXT NOT NULL,
     point_count INTEGER NOT NULL,
     has_visibility INTEGER NOT NULL CHECK(has_visibility IN (0, 1))
@@ -69,7 +69,7 @@ CREATE TABLE keypoints (
 
 CREATE TABLE classifications (
     id INTEGER PRIMARY KEY,
-    image_id INTEGER NOT NULL REFERENCES images(id) ON DELETE CASCADE,
+    image_id INTEGER NOT NULL REFERENCES images(id),
     label_id INTEGER NOT NULL REFERENCES labels(id),
     confidence REAL
 );

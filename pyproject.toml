@@ -19,7 +19,9 @@ bindings = 'pyo3'
 features = ["pyo3/extension-module"]
 
 [dependency-groups]
-dev = ["maturin"]
+dev = [
+    "maturin",
+]
 testing = [
     { include-group = "dev" },
     'coverage',

@@ -167,4 +167,34 @@ impl Database {
 
         Ok(ids)
     }
+
+    /// Delete an image and cascade to related records
+    /// (Manual cascade since DuckDB doesn't support ON DELETE CASCADE)
+    pub fn delete_image(&mut self, image_id: i32) -> DatalintResult<()> {
+        let tx = self.transaction()?;
+
+        // Delete related bboxes and their children first
+        tx.execute(
+            "DELETE FROM keypoints WHERE bbox_id IN (SELECT id FROM bboxes WHERE image_id = ?)",
+            duckdb::params![image_id],
+        )?;
+
+        tx.execute(
+            "DELETE FROM segmentations WHERE bbox_id IN (SELECT id FROM bboxes WHERE image_id = ?)",
+            duckdb::params![image_id],
+        )?;
+
+        tx.execute(
+            "DELETE FROM bboxes WHERE image_id = ?",
+            duckdb::params![image_id],
+        )?;
+        tx.execute(
+            "DELETE FROM classifications WHERE image_id = ?",
+            duckdb::params![image_id],
+        )?;
+        tx.execute("DELETE FROM images WHERE id = ?", duckdb::params![image_id])?;
+
+        tx.commit()?;
+        Ok(())
+    }
 }
