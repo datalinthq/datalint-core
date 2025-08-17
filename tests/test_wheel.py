@@ -16,7 +16,7 @@ def test_import():
 
         # Check for expected module attributes
         module_attrs = dir(datalint_core)
-        print(f"  Found {len(module_attrs)} module attributes")
+        print(f"Found {len(module_attrs)} module attributes")
 
         return True
     except ImportError as e:
@@ -33,10 +33,10 @@ def main():
 
     print("-" * 40)
     if success:
-        print("✓ All tests passed!")
+        print("All tests passed!")
         return 0
     else:
-        print("✗ Tests failed", file=sys.stderr)
+        print("Tests failed", file=sys.stderr)
         return 1
 
 
