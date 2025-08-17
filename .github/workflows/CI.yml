@@ -21,11 +21,35 @@ env:
   DUCKDB_EXPLICIT_PLATFORM: "1"
   CARGO_NET_RETRY: "10"
   CARGO_INCREMENTAL: "0"
+  # Python versions configuration - single source of truth
+  PYTHON_VERSIONS: '["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]'
+  # Minimum Python for build tools
+  MIN_PYTHON_VERSION: "3.8"
+  # Latest stable Python for general operations
+  STABLE_PYTHON_VERSION: "3.12"
 
 jobs:
+  # Generate Python version matrix dynamically
+  python-versions:
+    name: Generate Python versions matrix
+    runs-on: ubuntu-latest
+    outputs:
+      versions: ${{ steps.set-versions.outputs.versions }}
+      versions-list: ${{ steps.set-versions.outputs.versions-list }}
+    steps:
+      - id: set-versions
+        run: |
+          # Use environment variable as source of truth
+          echo "versions=${{ env.PYTHON_VERSIONS }}" >> $GITHUB_OUTPUT
+          # Convert to space-separated list for maturin
+          versions_list=$(echo '${{ env.PYTHON_VERSIONS }}' | jq -r '.[] | @text' | tr '\n' ' ')
+          echo "versions-list=${versions_list}" >> $GITHUB_OUTPUT
+          echo "Python versions for builds: ${versions_list}"
+
   # Linux builds using manylinux_2_28
   linux:
     runs-on: ${{ matrix.platform.runner }}
+    needs: [python-versions]
     strategy:
       matrix:
         platform:
@@ -38,7 +62,13 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.x
+          python-version: ${{ env.STABLE_PYTHON_VERSION }}
+
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+          prefix-key: "v0-rust"
 
       - name: Build wheels
         uses: PyO3/maturin-action@v1
@@ -47,16 +77,19 @@ jobs:
           args: --release --out dist --find-interpreter
           sccache: 'true'
           manylinux: manylinux_2_28
+          rust-toolchain: stable
 
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
           name: wheels-linux-${{ matrix.platform.target }}
           path: dist
+          compression-level: 9
 
   # Musllinux builds for Alpine Linux
   musllinux:
     runs-on: ${{ matrix.platform.runner }}
+    needs: [python-versions]
     strategy:
       matrix:
         platform:
@@ -69,7 +102,13 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.x
+          python-version: ${{ env.STABLE_PYTHON_VERSION }}
+
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+          prefix-key: "v0-rust"
 
       - name: Build wheels
         uses: PyO3/maturin-action@v1
@@ -78,16 +117,19 @@ jobs:
           args: --release --out dist --find-interpreter
           sccache: 'true'
           manylinux: musllinux_1_2
+          rust-toolchain: stable
 
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
           name: wheels-musllinux-${{ matrix.platform.target }}
           path: dist
+          compression-level: 9
 
   # Windows builds
   windows:
     runs-on: ${{ matrix.platform.runner }}
+    needs: [python-versions]
     strategy:
       matrix:
         platform:
@@ -100,8 +142,14 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.x
+          python-version: ${{ env.STABLE_PYTHON_VERSION }}
           architecture: ${{ matrix.platform.target }}
+
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+          prefix-key: "v0-rust"
 
       - name: Build wheels
         uses: PyO3/maturin-action@v1
@@ -109,6 +157,7 @@ jobs:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter
           sccache: 'true'
+          rust-toolchain: stable
         env:
           RUSTFLAGS: "-C target-feature=+crt-static"
 
@@ -117,71 +166,100 @@ jobs:
         with:
           name: wheels-windows-${{ matrix.platform.target }}
           path: dist
+          compression-level: 9
 
+  # macOS builds - dynamically use Python versions
   macos:
     runs-on: ${{ matrix.platform.runner }}
+    needs: [python-versions]
     strategy:
       matrix:
         platform:
-          - runner: macos-13
+          - runner: macos-13  # Intel
             target: x86_64
-          - runner: macos-14
+            macos-version: "10.14"
+          - runner: macos-14  # Apple Silicon (M1/M2)
             target: aarch64
+            macos-version: "11.0"
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
         with:
-          python-version: 3.x
+          cache-on-failure: true
+          prefix-key: "v0-rust"
 
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist --find-interpreter
+          # Use the dynamically generated Python versions
+          args: --release --out dist --interpreter ${{ needs.python-versions.outputs.versions-list }}
           sccache: 'true'
+          rust-toolchain: stable
         env:
-          MACOSX_DEPLOYMENT_TARGET: "10.14"
+          MACOSX_DEPLOYMENT_TARGET: ${{ matrix.platform.macos-version }}
 
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
           name: wheels-macos-${{ matrix.platform.target }}
           path: dist
+          compression-level: 9
 
+  # Source distribution
   sdist:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.STABLE_PYTHON_VERSION }}
+
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+          prefix-key: "v0-rust"
 
       - name: Build sdist
         uses: PyO3/maturin-action@v1
         with:
           command: sdist
           args: --out dist
-          sccache: 'true'
+          rust-toolchain: stable
 
       - name: Upload sdist
         uses: actions/upload-artifact@v4
         with:
           name: wheels-sdist
           path: dist
+          compression-level: 9
 
+  # Test wheels - matrix testing
   test:
-    name: Test wheels on linux, musllinux, windows, and macos
-    needs: [linux, musllinux, windows, macos]
+    name: Test wheels - ${{ matrix.os }} / Python ${{ matrix.python-version }}
+    needs: [python-versions, linux, musllinux, windows, macos, sdist]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: ${{ fromJson(needs.python-versions.outputs.versions) }}
+        exclude:
+          # Exclude combinations that don't exist or are problematic
+          # Python 3.8 on macOS-latest requires special handling
+          - os: macos-latest
+            python-version: '3.8'
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: 'pip'
 
       - name: Download wheels
         uses: actions/download-artifact@v4
@@ -190,23 +268,54 @@ jobs:
           merge-multiple: true
           path: dist
 
+      - name: List available files (cross-platform)
+        shell: python
+        run: |
+          import os
+          import glob
+          import platform
+          import sys
+
+          print(f"Python: {sys.version}")
+          print(f"Platform: {platform.system()} {platform.machine()}")
+          print(f"Architecture: {platform.architecture()}")
+
+          print("\nAvailable files in dist:")
+          dist_files = sorted(glob.glob("dist/*"))
+          if dist_files:
+              total_size = 0
+              for f in dist_files:
+                  size = os.path.getsize(f)
+                  total_size += size
+                  print(f"  {os.path.basename(f)} ({size:,} bytes)")
+              print(f"\nTotal: {len(dist_files)} files, {total_size:,} bytes")
+          else:
+              print("  No files found in dist/")
+
       - name: Install wheel
         run: |
-          pip install --find-links dist datalint-core --force-reinstall
-          python -c "import datalint_core; print('Successfully imported datalint_core')"
+          pip install --upgrade pip wheel
+          pip install --find-links dist datalint-core --force-reinstall --no-deps
+          pip install --find-links dist datalint-core[test] --force-reinstall
+          python -c "import datalint_core; print(f'Successfully imported datalint_core version: {datalint_core.__version__ if hasattr(datalint_core, \"__version__\") else \"unknown\"}')"
 
       - name: Run smoke tests
         run: |
           python tests/test_wheel.py
 
+
+  # Release to PyPI
   release:
     name: Release
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
-    needs: [linux, musllinux, windows, macos, sdist, test]
+    needs: [test]  # Only need to wait for tests, not all builds
     permissions:
       id-token: write
       contents: write
+    environment:
+      name: pypi
+      url: https://pypi.org/project/datalint-core/
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -214,11 +323,19 @@ jobs:
           merge-multiple: true
           path: dist
 
-      - name: List distribution files
+      - name: Verify distribution files
         run: |
           ls -la dist/
-          echo "Total wheels built: $(ls -1 dist/*.whl 2>/dev/null | wc -l)"
+          echo "===== Distribution Summary ====="
+          echo "Wheels built: $(ls -1 dist/*.whl 2>/dev/null | wc -l)"
           echo "Source distributions: $(ls -1 dist/*.tar.gz 2>/dev/null | wc -l)"
+          echo ""
+          echo "===== Wheel Details ====="
+          for wheel in dist/*.whl; do
+            if [ -f "$wheel" ]; then
+              echo "$(basename $wheel): $(du -h $wheel | cut -f1)"
+            fi
+          done
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
