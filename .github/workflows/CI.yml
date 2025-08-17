@@ -229,6 +229,7 @@ jobs:
         with:
           command: sdist
           args: --out dist
+          sccache: 'true'
           rust-toolchain: stable
 
       - name: Upload sdist
