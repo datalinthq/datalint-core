@@ -21,11 +21,8 @@ env:
   DUCKDB_EXPLICIT_PLATFORM: "1"
   CARGO_NET_RETRY: "10"
   CARGO_INCREMENTAL: "0"
-  # Python versions configuration - single source of truth
   PYTHON_VERSIONS: '["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]'
-  # Minimum Python for build tools
   MIN_PYTHON_VERSION: "3.8"
-  # Latest stable Python for general operations
   STABLE_PYTHON_VERSION: "3.12"
 
 jobs:
@@ -248,18 +245,19 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ${{ fromJson(needs.python-versions.outputs.versions) }}
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
         exclude:
           # Exclude combinations that don't exist or are problematic
           # Python 3.8 on macOS-latest requires special handling
           - os: macos-latest
-            python-version: '3.8'
+            python-version: "3.8"
+
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "${{ matrix.python-version }}"
           cache: 'pip'
 
       - name: Download wheels
@@ -298,7 +296,10 @@ jobs:
           pip install --upgrade pip wheel
           pip install --find-links dist datalint-core --force-reinstall --no-deps
           pip install --find-links dist datalint-core[test] --force-reinstall
-          python -c "import datalint_core; print(f'Successfully imported datalint_core version: {datalint_core.__version__ if hasattr(datalint_core, \"__version__\") else \"unknown\"}')"
+
+      - name: Verify import
+        run: |
+          python -c "import datalint_core; print(f'Successfully imported datalint_core version: {datalint_core.__version__}')"
 
       - name: Run smoke tests
         run: |
