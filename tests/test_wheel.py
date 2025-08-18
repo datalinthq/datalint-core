@@ -11,6 +11,7 @@ def test_import():
     """Test basic import of datalint_core module."""
     try:
         import datalint_core
+
         print("Successfully imported datalint_core")
         print(f"Module location: {datalint_core.__file__}")
 

@@ -2,6 +2,7 @@
 
 use pyo3::prelude::*;
 use std::path::PathBuf;
+use std::sync::OnceLock;
 
 // Internal modules
 mod cache;
@@ -11,6 +12,12 @@ pub mod errors;
 
 use crate::cache::create_cache_db;
 use crate::enums::{DatasetTask, DatasetType};
+
+pub fn get_datalint_core_version() -> &'static str {
+    static DATALINT_CORE_VERSION: OnceLock<String> = OnceLock::new();
+
+    DATALINT_CORE_VERSION.get_or_init(|| env!("CARGO_PKG_VERSION").to_string())
+}
 
 /// Create a cache database for a dataset
 ///
@@ -25,8 +32,7 @@ use crate::enums::{DatasetTask, DatasetType};
 /// Raises:
 ///     RuntimeError: If cache creation fails
 #[pyfunction]
-#[pyo3(name = "create_cache")]
-fn py_create_cache(
+fn create_cache(
     cache_path: String,
     dataset_type: DatasetType,
     dataset_task: DatasetTask,
@@ -37,18 +43,18 @@ fn py_create_cache(
 }
 
 /// Datalint Core Python module
-#[pymodule]
-#[pyo3(name = "_datalint_core")]
-fn datalint_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    // Add version information
-    m.add("__version__", env!("CARGO_PKG_VERSION"))?;
+#[pymodule(gil_used = false)]
+mod _datalint_core {
+    use super::*;
 
-    // Add functions
-    m.add_function(wrap_pyfunction!(py_create_cache, m)?)?;
+    // Export functions and classes
+    #[pymodule_export]
+    use crate::{create_cache, DatasetTask, DatasetType};
 
-    // Add enum classes
-    m.add_class::<DatasetTask>()?;
-    m.add_class::<DatasetType>()?;
-
-    Ok(())
+    // Module initialization
+    #[pymodule_init]
+    fn module_init(m: &Bound<'_, PyModule>) -> PyResult<()> {
+        m.add("__version__", get_datalint_core_version())?;
+        Ok(())
+    }
 }
