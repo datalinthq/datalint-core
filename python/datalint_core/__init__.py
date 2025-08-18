@@ -10,13 +10,13 @@ from __future__ import annotations
 from ._datalint_core import (
     DatasetTask,
     DatasetType,
-    __version__,
     create_cache,
+    __version__,
 )
 
 __all__ = [
     "DatasetTask",
     "DatasetType",
-    "__version__",
     "create_cache",
+    "__version__",
 ]

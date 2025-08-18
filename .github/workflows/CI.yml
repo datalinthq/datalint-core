@@ -299,7 +299,7 @@ jobs:
 
       - name: Verify import
         run: |
-          python -c "import datalint_core; print(f'Successfully imported datalint_core version: {datalint_core.__version__}')"
+          python -c "import datalint_core; print(f'Successfully imported datalint_core version: {datalint_core._datalint_core.__version__}')"
 
       - name: Run smoke tests
         run: |
