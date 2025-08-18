@@ -2,7 +2,6 @@
 
 use pyo3::prelude::*;
 use std::path::PathBuf;
-use std::sync::OnceLock;
 
 // Internal modules
 mod cache;
@@ -12,12 +11,6 @@ pub mod errors;
 
 use crate::cache::create_cache_db;
 use crate::enums::{DatasetTask, DatasetType};
-
-pub fn get_datalint_core_version() -> &'static str {
-    static DATALINT_CORE_VERSION: OnceLock<String> = OnceLock::new();
-
-    DATALINT_CORE_VERSION.get_or_init(|| env!("CARGO_PKG_VERSION").to_string())
-}
 
 /// Create a cache database for a dataset
 ///
@@ -54,7 +47,7 @@ mod _datalint_core {
     // Module initialization
     #[pymodule_init]
     fn module_init(m: &Bound<'_, PyModule>) -> PyResult<()> {
-        m.add("__version__", get_datalint_core_version())?;
+        m.add("__version__", env!("CARGO_PKG_VERSION"))?;
         Ok(())
     }
 }

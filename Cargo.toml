@@ -22,7 +22,7 @@ include = [
 rust-version = "1.75"
 
 [lib]
-name = "_datalint_core"
+name = "datalint_core"
 crate-type = ["cdylib", "rlib"]
 
 [[bin]]

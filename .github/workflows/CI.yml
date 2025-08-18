@@ -192,7 +192,7 @@ jobs:
         with:
           target: ${{ matrix.platform.target }}
           # Use the dynamically generated Python versions
-          args: --release --out dist --interpreter ${{ needs.python-versions.outputs.versions-list }}
+          args: --release --out dist --find-interpreter
           sccache: 'true'
           rust-toolchain: stable
         env:
@@ -289,13 +289,12 @@ jobs:
                   print(f"  {os.path.basename(f)} ({size:,} bytes)")
               print(f"\nTotal: {len(dist_files)} files, {total_size:,} bytes")
           else:
-              print("  No files found in dist/")
+              print("No files found in dist/")
 
       - name: Install wheel
         run: |
           pip install --upgrade pip wheel
-          pip install --find-links dist datalint-core --force-reinstall --no-deps
-          pip install --find-links dist datalint-core[test] --force-reinstall
+          pip install --no-index --find-links dist datalint-core[test] --force-reinstall
 
       - name: Verify import
         run: |
