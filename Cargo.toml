@@ -10,8 +10,12 @@ include = [
     "/README.md",
     "/LICENSE",
     "/Makefile",
+    "/build.rs",
     "/src",
+    "/python/datalint_core",
+    "/tests",
     "!__pycache__",
+    "!tests/.hypothesis",
     "!tests/.pytest_cache",
     "!*.so",
 ]
