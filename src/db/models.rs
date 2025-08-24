@@ -27,12 +27,12 @@ pub struct Label {
 pub struct Image {
     pub id: Option<i32>,
     pub filename: String,
+    pub format: Option<String>,
     pub relative_path: String,
     pub split: Option<String>,
     pub width: Option<i32>,
     pub height: Option<i32>,
     pub channels: Option<i32>,
-    pub format: Option<String>,
     pub file_size: Option<i64>,
     pub file_hash: String,
     pub is_corrupted: bool,

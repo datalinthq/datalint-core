@@ -29,12 +29,12 @@ CREATE TABLE labels (
 CREATE TABLE images (
     id INTEGER PRIMARY KEY DEFAULT nextval('images_id_seq'),
     filename TEXT NOT NULL,
+    format TEXT,
     relative_path TEXT NOT NULL,
     split TEXT NOT NULL DEFAULT 'unknown' CHECK(split IN ('train', 'val', 'test', 'unknown')),
     width INTEGER,
     height INTEGER,
     channels INTEGER,
-    format TEXT,
     file_size INTEGER,
     file_hash TEXT NOT NULL,
     is_corrupted INTEGER NOT NULL DEFAULT 0 CHECK(is_corrupted IN (0, 1)),

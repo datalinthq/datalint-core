@@ -86,12 +86,12 @@ fn process_image(path: &Path, dataset_root: &Path) -> DatalintResult<Image> {
     Ok(Image {
         id: None,
         filename,
+        format,
         relative_path,
         split,
         width,
         height,
         channels,
-        format,
         file_size: Some(file_size),
         file_hash: hash,
         is_corrupted,

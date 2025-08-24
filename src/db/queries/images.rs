@@ -9,7 +9,7 @@ pub struct ImageQueries;
 
 impl ImageQueries {
     const INSERT: &'static str = r#"
-        INSERT INTO images (filename, relative_path, split, width, height, channels, format, file_size, file_hash, is_corrupted)
+        INSERT INTO images (filename, format, relative_path, split, width, height, channels, file_size, file_hash, is_corrupted)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         RETURNING id
     "#;
@@ -31,15 +31,15 @@ impl ImageQueries {
             Self::INSERT,
             params![
                 image.filename,
+                image.format,
                 image.relative_path,
                 image.split,
                 image.width,
                 image.height,
                 image.channels,
-                image.format,
                 image.file_size,
                 image.file_hash,
-                image.is_corrupted as i32 // Convert bool to i32 for DuckDB
+                image.is_corrupted
             ],
             |row| row.get(0),
         )
@@ -62,12 +62,12 @@ impl ImageQueries {
             Ok(Image {
                 id: Some(row.get(0)?),
                 filename: row.get(1)?,
-                relative_path: row.get(2)?,
-                split: row.get(3)?,
-                width: row.get(4)?,
-                height: row.get(5)?,
-                channels: row.get(6)?,
-                format: row.get(7)?,
+                format: row.get(2)?,
+                relative_path: row.get(3)?,
+                split: row.get(4)?,
+                width: row.get(5)?,
+                height: row.get(6)?,
+                channels: row.get(7)?,
                 file_size: row.get(8)?,
                 file_hash: row.get(9)?,
                 is_corrupted: row.get::<_, i32>(10)? != 0, // Convert i32 to bool
