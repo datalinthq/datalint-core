@@ -35,6 +35,7 @@ pub struct Image {
     pub format: Option<String>,
     pub file_size: Option<i64>,
     pub file_hash: String,
+    pub is_corrupted: bool,
 }
 
 /// Bounding box

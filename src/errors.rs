@@ -7,6 +7,7 @@ use std::fmt;
 pub enum DatalintError {
     Io(std::io::Error),
     Database(String),
+    Core(String),
     Generic(String),
 }
 
@@ -15,6 +16,7 @@ impl fmt::Display for DatalintError {
         match self {
             Self::Io(err) => write!(f, "IO error: {}", err),
             Self::Database(err) => write!(f, "Database error: {}", err),
+            Self::Core(msg) => write!(f, "Core error: {}", msg),
             Self::Generic(msg) => write!(f, "{}", msg),
         }
     }

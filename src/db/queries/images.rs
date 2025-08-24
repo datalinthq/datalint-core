@@ -9,13 +9,13 @@ pub struct ImageQueries;
 
 impl ImageQueries {
     const INSERT: &'static str = r#"
-        INSERT INTO images (filename, relative_path, split, width, height, channels, format, file_size, file_hash)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO images (filename, relative_path, split, width, height, channels, format, file_size, file_hash, is_corrupted)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         RETURNING id
     "#;
 
     const SELECT_BY_HASH: &'static str = r#"
-        SELECT id, filename, relative_path, split, width, height, channels, format, file_size, file_hash
+        SELECT id, filename, relative_path, split, width, height, channels, format, file_size, file_hash, is_corrupted
         FROM images WHERE file_hash = ?
     "#;
 
@@ -39,6 +39,7 @@ impl ImageQueries {
                 image.format,
                 image.file_size,
                 image.file_hash,
+                image.is_corrupted as i32 // Convert bool to i32 for DuckDB
             ],
             |row| row.get(0),
         )
@@ -69,6 +70,7 @@ impl ImageQueries {
                 format: row.get(7)?,
                 file_size: row.get(8)?,
                 file_hash: row.get(9)?,
+                is_corrupted: row.get::<_, i32>(10)? != 0, // Convert i32 to bool
             })
         });
 
