@@ -82,13 +82,26 @@ fn process_image(path: &Path, dataset_root: &Path) -> DatalintResult<Image> {
         }
     };
 
-    // Determine split based on path (train/val/test) or default to "unknown"
-    let split = relative_path
-        .split(std::path::MAIN_SEPARATOR)
-        .chain(relative_path.split('/'))
-        .find(|s| matches!(*s, "train" | "val" | "test"))
-        .map(String::from)
-        .or_else(|| Some("unknown".to_string()));
+    // Infer split from path (train/val/test)
+    let split = {
+        let path_lower = relative_path.to_lowercase();
+        let mut matches = Vec::new();
+
+        if path_lower.contains("train") {
+            matches.push("train");
+        }
+        if path_lower.contains("val") {
+            matches.push("val");
+        }
+        if path_lower.contains("test") {
+            matches.push("test");
+        }
+
+        match matches.len() {
+            1 => Some(matches[0].to_string()),
+            _ => Some("unknown".to_string()),
+        }
+    };
 
     Ok(Image {
         id: None,
@@ -179,15 +192,16 @@ pub fn insert_images_batch(
 
     println!("Inserted {} images", success_count);
 
-    if !errors.is_empty() {
-        eprintln!("Failed to insert {} images:", errors.len());
-        for (i, err) in errors.iter().take(5).enumerate() {
-            eprintln!("  {}. {}", i + 1, err);
-        }
-        if errors.len() > 5 {
-            eprintln!("  ... and {} more errors", errors.len() - 5);
-        }
-    }
+    // TODO create log erro file
+    // if !errors.is_empty() {
+    //     eprintln!("Failed to insert {} images:", errors.len());
+    //     for (i, err) in errors.iter().take(5).enumerate() {
+    //         eprintln!("  {}. {}", i + 1, err);
+    //     }
+    //     if errors.len() > 5 {
+    //         eprintln!("  ... and {} more errors", errors.len() - 5);
+    //     }
+    // }
 
     Ok(())
 }
