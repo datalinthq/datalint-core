@@ -9,13 +9,13 @@ pub struct ImageQueries;
 
 impl ImageQueries {
     const INSERT: &'static str = r#"
-        INSERT INTO images (filename, format, relative_path, split, width, height, channels, file_size, file_hash, is_corrupted)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO images (name, filename, extension, relative_path, split, width, height, channels, file_size, file_hash, is_corrupted)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         RETURNING id
     "#;
 
     const SELECT_BY_HASH: &'static str = r#"
-        SELECT id, filename, relative_path, split, width, height, channels, format, file_size, file_hash, is_corrupted
+        SELECT id, name, filename, extension, relative_path, split, width, height, channels, file_size, file_hash, is_corrupted
         FROM images WHERE file_hash = ?
     "#;
 
@@ -30,8 +30,9 @@ impl ImageQueries {
         conn.query_row(
             Self::INSERT,
             params![
+                image.name,
                 image.filename,
-                image.format,
+                image.extension,
                 image.relative_path,
                 image.split,
                 image.width,
@@ -61,16 +62,17 @@ impl ImageQueries {
         let result = stmt.query_row(params![hash], |row| {
             Ok(Image {
                 id: Some(row.get(0)?),
-                filename: row.get(1)?,
-                format: row.get(2)?,
-                relative_path: row.get(3)?,
-                split: row.get(4)?,
-                width: row.get(5)?,
-                height: row.get(6)?,
-                channels: row.get(7)?,
-                file_size: row.get(8)?,
-                file_hash: row.get(9)?,
-                is_corrupted: row.get::<_, i32>(10)? != 0, // Convert i32 to bool
+                name: row.get(1)?,
+                filename: row.get(2)?,
+                extension: row.get(3)?,
+                relative_path: row.get(4)?,
+                split: row.get(5)?,
+                width: row.get(6)?,
+                height: row.get(7)?,
+                channels: row.get(8)?,
+                file_size: row.get(9)?,
+                file_hash: row.get(10)?,
+                is_corrupted: row.get::<_, i32>(11)? != 0, // Convert i32 to bool
             })
         });
 

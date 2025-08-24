@@ -36,6 +36,13 @@ fn process_image(path: &Path, dataset_root: &Path) -> DatalintResult<Image> {
         .to_string_lossy()
         .to_string();
 
+    // Extract basename without extension
+    let name = path
+        .file_stem()
+        .ok_or_else(|| DatalintError::Core("Invalid filename stem".to_string()))?
+        .to_string_lossy()
+        .to_string();
+
     // Get file metadata
     let metadata = fs::metadata(path)?;
     let file_size = metadata.len() as i64;
@@ -85,8 +92,9 @@ fn process_image(path: &Path, dataset_root: &Path) -> DatalintResult<Image> {
 
     Ok(Image {
         id: None,
+        name,
         filename,
-        format,
+        extension: format,
         relative_path,
         split,
         width,

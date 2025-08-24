@@ -28,8 +28,9 @@ CREATE TABLE labels (
 
 CREATE TABLE images (
     id INTEGER PRIMARY KEY DEFAULT nextval('images_id_seq'),
+    name TEXT NOT NULL,
     filename TEXT NOT NULL,
-    format TEXT,
+    extension TEXT,
     relative_path TEXT NOT NULL,
     split TEXT NOT NULL DEFAULT 'unknown' CHECK(split IN ('train', 'val', 'test', 'unknown')),
     width INTEGER,
@@ -85,6 +86,7 @@ CREATE TABLE classifications (
 
 -- Indexes for performance
 CREATE INDEX idx_images_hash ON images(file_hash);
+CREATE INDEX idx_images_name ON images(name);
 CREATE INDEX idx_bboxes_image ON bboxes(image_id);
 CREATE INDEX idx_bboxes_label ON bboxes(label_id);
 CREATE INDEX idx_bboxes_spatial ON bboxes(x1, y1, x2, y2);

@@ -26,8 +26,9 @@ pub struct Label {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Image {
     pub id: Option<i32>,
-    pub filename: String,
-    pub format: Option<String>,
+    pub name: String,              // Basename without extension
+    pub filename: String,          // Full filename with extension
+    pub extension: Option<String>, // File extension without dot
     pub relative_path: String,
     pub split: Option<String>,
     pub width: Option<i32>,
